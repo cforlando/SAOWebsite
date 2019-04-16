@@ -3,18 +3,15 @@
 }
 
 .header_bar {
-    border-bottom: 1px solid black;
-}
-
-.grid_container {
-    border: 1px solid black;
+    background: #612b9b;
+    color: white;
 }
 
 .gallery_img {
     width: 300px;
     height: 300px;
-    border: 1px solid black;
     cursor: pointer;
+    object-fit: scale-down;
 }
 
 .img_parent {
@@ -25,5 +22,32 @@
     display: block;
     width: 100%;
     max-height: 75%;
-    /* height: auto; */
+}
+
+#navbar_menu i {
+    color: white;
+}
+
+#navbar_menu i:hover {
+    color: grey;
+}
+
+.modal-body h2 {
+    font-size: 14px;
+}
+
+#appLinkBannerWrapper {
+    background-image: url('../img/sao-background3.png');
+}
+
+#appLinkBanner {
+    height: 100px;
+}
+
+#appLinkBanner a {
+    color: white;
+}
+
+#appLinkBanner a:hover {
+    color: grey;
 }
