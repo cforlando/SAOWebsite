@@ -1,0 +1,11 @@
+* Change header to color with text (no logo) ✓
+* Remove spacing between images ✓ (partially)
+* Include info from SAO.com app ✓
+* Hamburger should open to link to get the app ✓
+* Map on top with location notes on bottom small font (also divider, rest of text below that nothing bigger than 14) ✓
+* No semicolons (colons) ✓
+* Scale down loading gifs for images ✓
+* Include information notes in modal ✓
+* Fix the menu collapse ✓
+* Fix duplicate image loads ✓
+* Fix loading too many images at end ✓
