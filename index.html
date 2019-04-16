@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
-  <title>Orlando Street Art</title>
+  <title>Street Art Orlando</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -43,18 +43,14 @@
               </div>
             </div>
             <div class="col">
+              <div id="mapdiv" style="width:300px;height:300px;z-index:9999"></div>
+              <hr />
               <h2 id="art_title"></h2>
-              <h3>
-                <span>Submitted by:</span>
-                <span id="art_submitted_by"></span> 
-              </h3>
-              <div id="mapdiv" style="width:200px;height:200px;z-index:9999"></div>
-
+              <h2 id="art_artist"></h2>
+              <h2 id="art_submitted_by"></h2>
+              <h2 id="art_location_note"></h2>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
       </div>
     </div>
@@ -65,20 +61,27 @@
       <div class="nav_wrapper">
         <nav class="navbar navbar-expand-sm">
           <ul class="navbar-nav mr-auto">
-            <li class="navbar-brand">
-              <img class="logo" src="./img/siteLogo.png" />
-            </li>
-            <li class="navbar-brand mt-2">Orlando Street Art</li>
+            <li class="navbar-brand mt-1">Street Art Orlando</li>
           </ul>
-          <i class="fas fa-bars"></i>
+          <a id="navbar_menu" data-toggle="collapse" href="#appLinkBannerWrapper" role="button" aria-expanded="true" aria-controls="appLinkBannerWrapper">
+            <i class="fas fa-bars"></i>
+          </a>
         </nav>
       </div>
+      
+      </div>
+    </div>
+    <div id="appLinkBannerWrapper" class="text-center collapse">
+      <div id="appLinkBanner" class="row">
+        <a class="btn-primary btn btn-lg align-self-center mx-auto" href="https://itunes.apple.com/app/id1422535206?mt=8&at=11l7ss">
+          <i class="fa fa-apple fa-lg"></i> App Store
+        </a>
     </div>
   </header>
 
   <!-- temp; this section will be part of an infinite lazy loader -->
   <section id="gallery">
-    <div class="grid_container container">
+    <div class="grid_container container" style="width:914px">
       <div class="row text-center" id="gallery_page_1">
 
       </div>
@@ -108,81 +111,91 @@
 
   <script>
     let photoInfo = {};
+    let photoInfoRecord = [];
     let map = new ol.Map();
     let mapSource = new ol.source.OSM();
     let currPage = 1;
     let imgsPerPage = 12;
+    let lazyLoadInstance = new LazyLoad({
+      elements_selector: ".lazy"
+    });
 
     $(document).ready(() => {
-      
-      var lazyLoadInstance = new LazyLoad({
-        elements_selector: ".lazy"
-      });
 
-      axios.get('https://sao-api.herokuapp.com/api/submissions?page=1&per_page=12', {
+      appendImages(currPage);
+                        
+      $(document).on('scroll', _.throttle(checkToLoadAjax, 300));
+      
+    });
+
+    function checkToLoadAjax() {
+      if($(window).scrollTop() + $(window).height() >= $(document).height()) {
+          currPage++;
+          appendImages(currPage);
+      }
+    }
+
+    function updateLazyLoad() {
+      if(lazyLoadInstance) {
+        lazyLoadInstance.update();
+      }
+    }
+    
+    function retrieveImageInfo(currPage) {
+      return axios.get(`https://sao-api.herokuapp.com/api/submissions?page=${currPage}&per_page=${imgsPerPage}`, {
           headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
           }
-      }).then(
-          (res) => {
-            let info =_.cloneDeep(res.data.submissions);
-            for(subs in res.data.submissions) {
-              photoInfo[res.data.submissions[subs].id] = {
-                'artist': res.data.submissions[subs].artist,
-                'created_at': res.data.submissions[subs].created_at,
-                'description': res.data.submissions[subs].description,
-                'latitude': res.data.submissions[subs].latitude,
-                'location_note': res.data.submissions[subs].location_note,
-                'longitude': res.data.submissions[subs].longitude,
-                'nickname': res.data.submissions[subs].nickname,
-                'photo_url': res.data.submissions[subs].photo_url,
-                'status': res.data.submissions[subs].status,
-                'thumb_url': res.data.submissions[subs].thumb_url,
-                'tiny_url': res.data.submissions[subs].tiny_url,
-                'title': res.data.submissions[subs].title
-              }
-
-              appendImages(currPage, res.data.submissions[subs].thumb_url, res.data.submissions[subs].id)
-              if(lazyLoadInstance) {
-                lazyLoadInstance.update();
-              }
-
-            }
-            console.log(photoInfo);
-            
-            $(document).on('scroll', _.throttle(checkToLoadAjax, 300));
-            
-            function checkToLoadAjax() {
-              if($(window).scrollTop() + $(window).height() >= $(document).height()) {
-                  console.log("should load AJAX here");
-              }
-            }
-          }).catch((err) => {
-              console.log(err);
-          }).then(setModalInfo)
-            .finally(smallTest);
-    });
-    
-    function retrieveImageInfo(currPage) {
-
+      });
     }
 
-    function appendImages(currPage, thumbURL, id) {
-      $(`#gallery_page_${currPage}`).last().append(`
-        <div class="col-lg-4 col-md-6">
-          <img class="gallery_img mt-2 lazy" 
-                src="./img/loadingSpinner.gif"
-                data-src="${thumbURL}"
-                data-idnum="${id}"   
-          />
-        </div>
-      `);
+    async function appendImages() {
+      let res = await retrieveImageInfo(currPage);
+      console.log(res.data.submissions.length);
+      for(let i = 0; i < res.data.submissions.length; i++) {
+        photoInfo[i + (currPage-1)*imgsPerPage] = {
+          'artist': res.data.submissions[i].artist,
+          'created_at': res.data.submissions[i].created_at,
+          'description': res.data.submissions[i].description,
+          'latitude': res.data.submissions[i].latitude,
+          'location_note': res.data.submissions[i].location_note,
+          'longitude': res.data.submissions[i].longitude,
+          'nickname': res.data.submissions[i].nickname,
+          'photo_url': res.data.submissions[i].photo_url,
+          'status': res.data.submissions[i].status,
+          'thumb_url': res.data.submissions[i].thumb_url,
+          'tiny_url': res.data.submissions[i].tiny_url,
+          'title': res.data.submissions[i].title,
+          'id': res.data.submissions[i].id
+        }
+      }
+
+      if(res.data.submissions.length > 0) {
+        // insert new gallery page div
+        $(".grid_container").append(`
+          <div class="row text-center" id="gallery_page_${currPage}">
+          </div>
+          `
+        );
+      }
+
+      let limit = imgsPerPage - res.data.submissions.length;
+      for(let i = (currPage-1)*imgsPerPage; i < (currPage*imgsPerPage - limit); i++) {
+        $(`#gallery_page_${currPage}`).last().append(`
+          <div class="col-lg-4 col-md-6">
+            <img class="gallery_img mt-2 lazy"
+                  data-src="${photoInfo[i].thumb_url}"
+                  src="./img/loadingSpinner.gif"
+                  data-idnum="${i}"   
+            />
+          </div>
+        `);
+      }
+      updateLazyLoad();
+      setModalInfo();
     }
 
-    function smallTest() {
-      console.log("smallTest fired");
-    }
     function setModalInfo() {
       // set click event listener on every element with a gallery_img tag
       $(".gallery_img").click((ev) => {
@@ -193,11 +206,17 @@
           ? $("#art_img").attr("src", photoInfo[idNum].thumb_url)
           : $("#art_img").attr("src", "https://via.placeholder.com/200"); // will eventually be error img
         photoInfo[idNum].title
-          ? $("#art_title").text(photoInfo[idNum].title)
-          : $("#art_title").text("");
+          ? $("#art_title").html(`<span>Title </span><span class="font-italic">${photoInfo[idNum].title}</span>`)
+          : $("#art_title").html("");
         photoInfo[idNum].nickname
-          ? $("#art_submitted_by").text(photoInfo[idNum].nickname)
-          : $("#art_submitted_by").text("")
+          ? $("#art_submitted_by").html(`<span>Submitted by </span><span class="font-weight-bold">${photoInfo[idNum].nickname}</span>`)
+          : $("#art_submitted_by").html("");
+        photoInfo[idNum].artist
+          ? $("#art_artist").html(`<span>Artist </span><span class="font-weight-bold">${photoInfo[idNum.artist]}</span>`)
+          : $("#art_artist").html("");
+        photoInfo[idNum].location_note
+          ? $("#art_location_note").html(`<span>Location Note </span><span class="font-weight-bold">${photoInfo[idNum].location_note}</span>`)
+          : $("#art_location_note").html("");
         
         
         $("#infoModal").modal('show', idNum);
@@ -208,7 +227,6 @@
       // This works to pass the idNum into the modal. I don't know why.
       // It's very hackish and I'll likely replace it with something better
       // later. For now, it works.
-      console.log(e.relatedTarget);
       map.setTarget(null);
       initMap();
       updateMap(e.relatedTarget);
